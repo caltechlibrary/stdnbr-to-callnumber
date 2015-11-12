@@ -1,3 +1,4 @@
+
 # issn-to-loc-callnumber
 
 A quick and dirty shell script that takes a list of ISSN (one ISSN per line) and outputs a tab delimited file of ISSN and any LOC call numbers discovered via the OCLC classify API.
@@ -8,6 +9,5 @@ A quick and dirty shell script that takes a list of ISSN (one ISSN per line) and
 + xpath (installed usually with Perl and the XML modules)
 + cut
 + curl
-+ find
 
 
