@@ -51,7 +51,7 @@ cat $1 | while read STDNBR; do
         curl -s --output $DATA_FILE http://classify.oclc.org/classify2/Classify?owi=$OWI
         TITLE=$(xpath $DATA_FILE '//editions/edition[1]/@title' | cut -d \" -f 2)
         CALL_NO=$(xpath $DATA_FILE '//lcc/mostPopular/@sfa' | cut -d \" -f 2)
-        echo "Found title: $TITLE, call no: $CALL_NO"
+        echo "Retrieved call no [$CALL_NO] for title [$TITLE]"
         echo -e "$STDNBR\t$CALL_NO\t$TITLE" >> $TAB_DELIMITED_FILE
     fi
 done
