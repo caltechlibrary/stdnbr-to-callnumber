@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$1" = "" ]; then
-   echo 'USAGE: bash issn-to-loc-callnumber.sh ISSN_LIST_FILE'
+   echo 'USAGE: bash stnnbr-to-callnumber.sh ISSN_LIST_FILE'
    exit 1
 fi
 
@@ -15,13 +15,19 @@ CSV_FILE="data.csv"
 ISSN=""
 TITLE=""
 CALL_NO=""
-echo 'ISSN,CALL_NO,TITLE' > $CSV_FILE
+echo 'Standard_Number,CALL_NO,TITLE' > $CSV_FILE
 cat $1 | while read ISSN; do
     # now generate the owi version of the file...
     echo "Checking $ISSN"
     DATA_FILE="data/$ISSN.xml"
-    curl -s --output $DATA_FILE http://classify.oclc.org/classify2/Classify?issn=$ISSN
-    OWI=$(xpath data/$ISSN.xml "//work[1]/@owi" | cut -d \" -f 2)
+    curl -s --output $DATA_FILE http://classify.oclc.org/classify2/Classify?stdnbr=$ISSN
+    # Check first for physical Journal Call No.
+    OWI=$(xpath data/$ISSN.xml '//work[@itemtype="itemtype-jrnl"]/@owi' | cut -d \" -f 2)
+    if [ "$OWI" = "" ]; then
+        # then check for digital Journal Call No.
+        OWI=$(xpath data/$ISSN.xml '//work[@itemtype="itemtype-jrnl-digital"]/@owi' | cut -d \" -f 2)
+    fi
+    # We've check both types of journals and should have either the hard copy or digital copy.
     if [ "$OWI" != "" ]; then
         echo "Found OWI: $OWI"
         DATA_FILE="data/owi-$ISSN.xml"
@@ -32,4 +38,5 @@ cat $1 | while read ISSN; do
         echo "Title: $TITLE, Call No: $CALL_NO"
         echo "$ISSN,$CALL_NO,$TITLE" >> $CSV_FILE
     fi
+
 done
