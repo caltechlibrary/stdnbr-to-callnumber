@@ -1,20 +1,32 @@
 #!/bin/bash
 
 if [ "$1" = "" ]; then
-   echo 'USAGE: bash stnnbr-to-callnumber.sh STDNBR_LIST_FILE'
+   echo 'USAGE: bash stnnbr-to-callnumber.sh STDNBR_LIST_FILE [y/N]'
    exit 1
 fi
 
 mkdir -p data
 # Get all the documents by STDNBR
-CSV_FILE="data.csv"
+TAB_DELIMITED_FILE="data.txt"
 STDNBR=""
 TITLE=""
 CALL_NO=""
-if [ -f "data.csv" ]; then
-    rm data.csv
+if [ -f $TAB_DELIMITED_FILE ]; then
+    if [ "$2" = "" ]; then
+        echo -n "Remove? (y/N) "
+        read YES_NO
+    else
+        YES_NO=$2
+    fi
+    if [ "$YES_NO" = "Y" ] || [ "$YES_NO" = "y" ]; then
+        rm $TAB_DELIMITED_FILE
+        touch $TAB_DELIMITED_FILE
+        echo -e "STANDARD_NUMBER\tCALL_NO\tTITLE" >> $TAB_DELIMITED_FILE
+    fi
+else
+    touch $TAB_DELIMITED_FILE
+    echo -e "STANDARD_NUMBER\tCALL_NO\tTITLE" >> $TAB_DELIMITED_FILE
 fi
-echo 'Standard_Number,CALL_NO,TITLE' > $CSV_FILE
 cat $1 | while read STDNBR; do
     # now generate the owi version of the file...
     echo "Checking $STDNBR"
@@ -22,7 +34,7 @@ cat $1 | while read STDNBR; do
     echo "Output results to $DATA_FILE"
     curl -s --output $DATA_FILE http://classify.oclc.org/classify2/Classify?stdnbr=$STDNBR
     if [ ! -f "data/$STDNBR.xml" ]; then
-        echo "Can't find data/$SDNBR.xml"
+        echo "Can't find data/$STDNBR.xml"
         exit 1
     fi
     # Check first for physical Journal Call No.
@@ -39,8 +51,7 @@ cat $1 | while read STDNBR; do
         curl -s --output $DATA_FILE http://classify.oclc.org/classify2/Classify?owi=$OWI
         TITLE=$(xpath $DATA_FILE '//editions/edition[1]/@title' | cut -d \" -f 2)
         CALL_NO=$(xpath $DATA_FILE '//lcc/mostPopular/@sfa' | cut -d \" -f 2)
-        echo "Title: $TITLE, Call No: $CALL_NO"
-        echo "$STDNBR,$CALL_NO,$TITLE" >> $CSV_FILE
+        echo "Found title: $TITLE, call no: $CALL_NO"
+        echo -e "$STDNBR\t$CALL_NO\t$TITLE" >> $TAB_DELIMITED_FILE
     fi
-
 done
